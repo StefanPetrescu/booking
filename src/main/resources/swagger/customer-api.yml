@@ -1,0 +1,175 @@
+openapi: '3.0.2'
+info:
+  version: 0.0.3
+  title: Customer Api
+  description: |
+    ### This API documents the customer api
+    very well defined
+  termsOfService: 'http://www.google.com'
+  license:
+    name: CC Stefan Petrescu 2024. All rights reserved
+    url: 'http://www.stefanpetrescu.com'
+servers:
+  - description: hosting a dev setup
+    url: 'http://localhost:3035/customer/v1'
+
+
+paths:
+  /customer/{propertyName}:
+    get:
+      tags:
+        - CustomerPropertyTrack
+      description: track customer that made a reservation for a property
+      operationId: fetchCustomer
+      parameters:
+        - in: path
+          name: propertyName
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: successfully executed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackCustomerList'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /customer:
+    post:
+      tags:
+        - customer
+      summary: just a post example
+      operationId: executeTrigger
+      parameters:
+        - $ref: '#/components/parameters/fileName'
+        - $ref: '#/components/parameters/source'
+      responses:
+        '201':
+          description: successfully executed
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    fileName:
+      name: fileName
+      required: true
+      in: query
+      description: name of the file to be processed
+      schema:
+        type: string
+        pattern: ^[A-za-z0-9._\-]{10,}$
+        example: testfile1.txt
+    source:
+      name: source
+      required: true
+      in: query
+      description: name of source
+      schema:
+        type: string
+        pattern: ^[A-za-z0-9._\-]{10,}$
+        example: TEST_SOURCE_REQUIRED
+
+  schemas:
+    TrackCustomerList:
+      type: array
+      items:
+        $ref: '#/components/schemas/TrackCustomer'
+    TrackCustomer:
+      required:
+        - firstName
+        - lastName
+      properties:
+        firstName:
+          type: string
+          example: Stefan
+        lastName:
+          type: string
+          example: Petrescu
+    errors:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/error'
+      properties:
+        validationErrors:
+          type: array
+          description: a list of validation errors
+          items:
+            $ref: '#/components/schemas/validationError'
+    error:
+      type: object
+      required:
+        - errorName
+        - message
+      properties:
+        errorName:
+          type: string
+          description: A machine and human readable error type for clarity and semantic understanding of the error
+        message:
+          type: string
+          description: A human readable message giving a corrective action for the error. This is not for machine consumption
+    validationError:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/error'
+      properties:
+        jsonPath:
+          type: string
+          description: This field represents the JSONPath of the element within the request body associated with the error
+        pathParameter:
+          type: string
+          description: This field identifies a path parameter within the request URL that caused an error - e.g. a resource reference
+        queryParameter:
+          type: string
+          description: This field represents the name of a query parameter within the request URL that caused the error
+
+
+  responses:
+    ForbiddenError:
+      description: The specified resourse is forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errors'
+    UnauthorizedError:
+      description: Unauthorized request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errors'
+    BadRequestError:
+      description: Request is not well-formed, syntactically incorrect, or violates schema or the data submitted is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errors'
+    InternalServerError:
+      description: An internal server error has occurred
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errors'
